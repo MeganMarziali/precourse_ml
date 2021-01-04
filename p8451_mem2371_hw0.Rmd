@@ -1,0 +1,42 @@
+---
+title: "Homework 0: Pre-Course Assignment"
+author: "Megan Marziali"
+date: "January 3, 2021"
+output: github_document
+---
+
+This document contains a solution for the pre-course assignment for EPID P8451.
+
+```{r setup, message=FALSE}
+library(tidyverse)
+library(arsenal)
+```
+
+
+## Question 1: Summary Table
+
+The code chunk below imports and cleans the data.
+
+```{r, message=FALSE}
+bc_data = 
+  read_csv("./data/bcdata_Assignment1.csv",
+           na = "") %>% 
+  janitor::clean_names()
+```
+
+The dataset contains 10 variables and 116 observations.
+
+The code chunk below creates a summary table of the quantitative features of the dataset.
+
+```{r, results="asis"}
+table_one = tableby(~ age + bmi + glucose + insulin
+                    + homa + leptin + adiponectin 
+                    + resistin + mcp_1, data = bc_data,
+                    numeric.stats = c("mean","median", "min", "max"))
+
+summary(table_one)
+```
+
+
+
+
