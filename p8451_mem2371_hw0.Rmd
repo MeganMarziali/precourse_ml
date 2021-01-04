@@ -10,6 +10,23 @@ This document contains a solution for the pre-course assignment for EPID P8451.
 ```{r setup, message=FALSE}
 library(tidyverse)
 library(arsenal)
+library(ggplot2)
+
+knitr::opts_chunk$set(
+  fig.width = 6,
+  fig.asp = 0.6,
+  out.width = "90%"
+)
+
+theme_set(theme_minimal() + theme(legend.position = "bottom"))
+
+options(
+  ggplot2.continuous.colour = "viridis",
+  ggplot2.continuous.fill = "viridis"
+)
+
+scale_colour_discrete = scale_color_viridis_d
+scale_fill_discrete = scale_fill_viridis_d
 ```
 
 ## Question 1: Summary Table
@@ -20,7 +37,13 @@ The code chunk below imports and cleans the data.
 bc_data = 
   read_csv("./data/bcdata_Assignment1.csv",
            na = "") %>% 
-  janitor::clean_names()
+  janitor::clean_names() %>% 
+  mutate(
+    classification = as.factor(classification),
+    bc = recode(
+      classification, 
+      "1" = "0", 
+      "2" = "1"))
 ```
 
 The dataset contains 10 variables and 116 observations.
@@ -36,12 +59,13 @@ table_one = tableby(~ age + bmi + glucose + insulin
 summary(table_one)
 ```
 
-## Question 1: Recoding BMI
+## Question 2: Recoding BMI
 
 The code chunk below will recode BMI into the WHO defined categories.
 
 ```{r}
-bc_data %>% 
+bc_data_rec =   
+  bc_data %>% 
   mutate(
     bmi_cat = case_when(bmi < 16.5 ~ "severely underweight", 
                         bmi < 18.5 ~ "underweight",
@@ -52,4 +76,53 @@ bc_data %>%
                         bmi >= 40 ~ "obese class III"))
 ```
 
+## Question 3: Bar Chart
 
+The code below creates a bar chart representing the cases and controls of breast cancer per BMI category. The legend denotes breast cancer classifications, where 0 corresponds to healthy controls and 1 corresponds to cases.
+
+```{r}
+bc_data_rec %>% 
+  group_by(bc, bmi_cat) %>% 
+  count(bc) %>% 
+  ggplot(aes(x = bmi_cat, y = n, fill = bc)) + 
+    geom_bar(position = "dodge", stat = "identity") +
+    labs(x = "BMI category",
+         y = "Number of cases or controls")
+```
+
+## Question 4: Logistic Regression
+
+The code below runs a logistic regression model with breast cancer as the outcome and glucose, HOMA, leptin, BMI and age as the independent variables. The beta estimate, OR and 95% confidence intervals are presented for a one-unit change in HOMA.
+
+```{r}
+glm(bc ~ glucose + homa + leptin + bmi + age, data = bc_data, family = binomial()) %>% 
+  broom::tidy() %>% 
+  mutate(
+    OR = exp(estimate),
+    CI_lower = exp(estimate - 1.96 * std.error),
+    CI_upper = exp(estimate + 1.96 * std.error)
+  ) %>% 
+  select(term, estimate, OR, starts_with("CI")) %>% 
+  filter(str_detect(term, "homa")) %>% 
+  mutate(
+    term = str_replace(term, "homa", "HOMA: ")) %>% 
+  knitr::kable(digits = 3)
+```
+
+## Question 5: Linear Regression
+
+The code below runs a linear regression model with insulin as the outcome and BMI, age, and glucose as the independent variables. The estimate and 95% confidence intervals for a one-unit change in age are presented.
+
+```{r}
+lm(insulin ~ bmi + age + glucose, data = bc_data) %>% 
+  broom::tidy() %>% 
+  mutate(
+    CI_lower = exp(estimate - 1.96 * std.error),
+    CI_upper = exp(estimate + 1.96 * std.error)
+  ) %>% 
+  select(term, estimate, starts_with("CI")) %>% 
+  filter(str_detect(term, "age")) %>% 
+  mutate(
+    term = str_replace(term, "age", "Age: ")) %>% 
+  knitr::kable(digits = 3)
+```
