@@ -12,7 +12,6 @@ library(tidyverse)
 library(arsenal)
 ```
 
-
 ## Question 1: Summary Table
 
 The code chunk below imports and cleans the data.
@@ -32,11 +31,25 @@ The code chunk below creates a summary table of the quantitative features of the
 table_one = tableby(~ age + bmi + glucose + insulin
                     + homa + leptin + adiponectin 
                     + resistin + mcp_1, data = bc_data,
-                    numeric.stats = c("mean","median", "min", "max"))
+                    numeric.stats = c("mean","median", "range"))
 
 summary(table_one)
 ```
 
+## Question 1: Recoding BMI
 
+The code chunk below will recode BMI into the WHO defined categories.
+
+```{r}
+bc_data %>% 
+  mutate(
+    bmi_cat = case_when(bmi < 16.5 ~ "severely underweight", 
+                        bmi < 18.5 ~ "underweight",
+                        bmi >= 18.5 & bmi < 25 ~ "normal",
+                        bmi >= 25 & bmi < 30 ~ "overweight",
+                        bmi >= 30 & bmi < 35 ~ "obese class I",
+                        bmi >= 35 & bmi < 40 ~ "obese class II",
+                        bmi >= 40 ~ "obese class III"))
+```
 
 
